@@ -387,21 +387,17 @@ class DDPG(RLAlgorithm):
         :return: Clamped tensor
         :rtype: torch.Tensor
         """
-        if not isinstance(min, np.ndarray) and not isinstance(max, np.ndarray):
-            return torch.clamp(input, min, max)
+        if isinstance(min, np.ndarray):
+            min = torch.from_numpy(min).to(input.device)
+        if isinstance(max, np.ndarray):
+            max = torch.from_numpy(max).to(input.device)
 
-        device = self.device if self.accelerator is None else self.accelerator.device
-        min = torch.from_numpy(min).to(device) if isinstance(min, np.ndarray) else min
-        max = torch.from_numpy(max).to(device) if isinstance(max, np.ndarray) else max
-
-        if isinstance(max, torch.Tensor) and isinstance(min, (int, float)):
-            min = torch.full_like(max, min).to(device)
         if isinstance(min, torch.Tensor) and isinstance(max, (int, float)):
-            max = torch.full_like(min, max).to(device)
+            max = torch.full_like(min, max)
+        elif isinstance(max, torch.Tensor) and isinstance(min, (int, float)):
+            min = torch.full_like(max, min)
 
-        output = torch.max(torch.min(input, max), min).type(input.dtype)
-
-        return output
+        return input.clamp(min, max)
 
     def reset_action_noise(self, indices: ArrayLike) -> None:
         """Reset action noise."""
