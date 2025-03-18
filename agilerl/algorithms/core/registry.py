@@ -146,16 +146,17 @@ class HyperparameterConfig:
     """Stores the RL hyperparameters that will be mutated during training. For each
     hyperparameter, we store the name of the attribute where the hyperparameter is
     stored, and the range of values that the hyperparameter can take."""
-
+    
     def __init__(self, **kwargs: Dict[str, RLParameter]):
-        self.config = kwargs
+        self.config = {}
+        self._keys = []
         for key, value in kwargs.items():
             if not isinstance(value, RLParameter):
                 raise ValueError(
                     "Expected RLParameter object for hyperparameter configuration."
                 )
-
-            setattr(self, key, value)
+            self.config[key] = value
+            self._keys.append(key)
 
     def __repr__(self) -> str:
         return (
@@ -182,7 +183,7 @@ class HyperparameterConfig:
         return self.config[key]
 
     def names(self) -> List[str]:
-        return list(self.config.keys())
+        return self._keys
 
     def items(self) -> Dict[str, Any]:
         return self.config.items()
