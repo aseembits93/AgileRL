@@ -74,7 +74,7 @@ class QNetwork(EvolvableNetwork):
             raise ValueError("Action space must be either Discrete or MultiDiscrete")
 
         if head_config is None:
-            head_config = asdict(MlpNetConfig(hidden_size=[16], output_activation=None))
+            head_config = asdict(MlpNetConfig(hidden_size=[16], output_activation=None)) #testing
 
         self.num_actions = spaces.flatdim(action_space)
 
