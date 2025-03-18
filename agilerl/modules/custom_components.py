@@ -135,16 +135,9 @@ class NewGELU(nn.Module):
     """
 
     def forward(self, x):
-        return (
-            0.5
-            * x
-            * (
-                1.0
-                + torch.tanh(
-                    math.sqrt(2.0 / math.pi) * (x + 0.044715 * torch.pow(x, 3.0))
-                )
-            )
-        )
+        x_cube = x * x * x  # Replacing torch.pow for cubic computation
+        inner_tanh = math.sqrt(2.0 / math.pi) * (x + 0.044715 * x_cube)
+        return 0.5 * x * (1.0 + torch.tanh(inner_tanh))
 
 
 class ResidualBlock(nn.Module):
