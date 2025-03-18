@@ -23,11 +23,12 @@ class GumbelSoftmax(nn.Module):
         :param eps: Epsilon, defaults to 1e-20
         :type eps: float, optional
         """
-        torch.compiler.cudagraph_mark_step_begin()
-        epsilon = torch.rand_like(logits)  # epsilon = U
-        gumbel_noise = -torch.log(-torch.log(epsilon + eps) + eps)
-        y = logits + gumbel_noise
-        return F.softmax(y / tau, dim=-1)
+        # Using torch.rand_like directly on logits device for potentially faster operations
+        epsilon = torch.rand_like(logits, device=logits.device)
+        # Reused epsilon for gumbel_noise to ensure in-place operations
+        epsilon.add_(eps).log_().neg_().add_(eps).log_().neg_()
+        y = logits.add(epsilon)
+        return F.softmax(y.div(tau), dim=-1)
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         return self.gumbel_softmax(input)
