@@ -31,14 +31,10 @@ class SpecifiedTokenReward(TokenReward):
         self.shift = shift
 
     def get_token_reward(self, tokens: List[int]) -> List[float]:
-        return [
-            (
-                (self.token_data[tok] * self.scale + self.shift)
-                if tok in self.token_data
-                else (0.0 * self.scale + self.shift)
-            )
-            for tok in tokens[1:]
-        ]
+        scale = self.scale
+        shift = self.shift
+        token_data = self.token_data
+        return [(token_data.get(tok, 0.0) * scale + shift) for tok in tokens[1:]]
 
 
 @dataclass
