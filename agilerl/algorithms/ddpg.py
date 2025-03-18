@@ -274,52 +274,73 @@ class DDPG(RLAlgorithm):
         """
         if convert_to_torch:
             max_action = (
-                torch.from_numpy(self.max_action).to(self.device)
-                if isinstance(self.max_action, (np.ndarray))
+                torch.tensor(self.max_action, device=self.device)
+                if isinstance(self.max_action, (np.ndarray, list))
+                else torch.tensor(self.max_action)
+            )
+            min_action = (
+                torch.tensor(self.min_action, device=self.device)
+                if isinstance(self.min_action, (np.ndarray, list))
+                else torch.tensor(self.min_action)
+            )
+        else:
+            max_action = (
+                np.array(self.max_action)
+                if isinstance(self.max_action, (list))
                 else self.max_action
             )
             min_action = (
-                torch.from_numpy(self.min_action).to(self.device)
-                if isinstance(self.min_action, (np.ndarray))
+                np.array(self.min_action)
+                if isinstance(self.min_action, (list))
                 else self.min_action
             )
-        else:
-            max_action = self.max_action
-            min_action = self.min_action
 
-        # True if min and max action limits are defined as arrays/tensors
+        # Check if the action limits are arrays or tensors
         array_limits = isinstance(max_action, (np.ndarray, torch.Tensor))
 
-        if (array_limits and (np.inf in max_action or -np.inf in min_action)) or (
-            not array_limits and (np.inf == max_action or -np.inf == min_action)
-        ):
-            # If infinity in action limits, impossible to scale
-            return action.clip(min_action, max_action)
-
-        if self.actor.output_activation in ["Tanh"]:
-            pre_scaled_min = -1
-            pre_scaled_max = 1
-        elif self.actor.output_activation in ["Sigmoid", "Softmax"]:
-            pre_scaled_min = 0
-            pre_scaled_max = 1
-        else:
-            action = (
-                torch.where(action > 0, action * max_action, action * -min_action)
-                if convert_to_torch
-                else np.where(action > 0, action * max_action, action * -min_action)
+        if (
+            array_limits and (np.isinf(max_action).any() or np.isinf(min_action).any())
+        ) or (not array_limits and (np.isinf(max_action) or np.isinf(min_action))):
+            # Cannot scale if there is infinity in action limits
+            return (
+                np.clip(action, min_action, max_action)
+                if not convert_to_torch
+                else action.clip(min_action, max_action)
             )
-            return action.clip(min_action, max_action)
 
+        # Handle pre-scaling based on actor output activation
+        output_activation = self.actor.output_activation
+        if output_activation == "Tanh":
+            pre_scaled_min, pre_scaled_max = -1, 1
+        elif output_activation in ["Sigmoid", "Softmax"]:
+            pre_scaled_min, pre_scaled_max = 0, 1
+        else:
+            return (
+                np.where(action > 0, action * max_action, action * -min_action).clip(
+                    min_action, max_action
+                )
+                if not convert_to_torch
+                else torch.where(
+                    action > 0, action * max_action, action * -min_action
+                ).clip(min_action, max_action)
+            )
+
+        # Fast return if pre-scaled min and max match action space limits
         if not array_limits and (
             pre_scaled_min == min_action and pre_scaled_max == max_action
         ):
-            return action.clip(min_action, max_action)
+            return (
+                np.clip(action, min_action, max_action)
+                if not convert_to_torch
+                else action.clip(min_action, max_action)
+            )
 
+        # Scale the action
         return (
-            min_action
-            + (max_action - min_action)
+            (max_action - min_action)
             * (action - pre_scaled_min)
             / (pre_scaled_max - pre_scaled_min)
+            + min_action
         ).clip(min_action, max_action)
 
     def get_action(self, obs: ObservationType, training: bool = True) -> ArrayOrTensor:
