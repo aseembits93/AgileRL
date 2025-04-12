@@ -23,14 +23,30 @@ class GumbelSoftmax(nn.Module):
         :param eps: Epsilon, defaults to 1e-20
         :type eps: float, optional
         """
-        torch.compiler.cudagraph_mark_step_begin()
-        epsilon = torch.rand_like(logits)  # epsilon = U
-        gumbel_noise = -torch.log(-torch.log(epsilon + eps) + eps)
+        gumbel_noise = GumbelSoftmax.compute_gumbel_noise(logits, eps)
         y = logits + gumbel_noise
-        return F.softmax(y / tau, dim=-1)
+        return torch.softmax(y / tau, dim=-1)
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         return self.gumbel_softmax(input)
+
+    @staticmethod
+    def compute_gumbel_noise(logits: torch.Tensor, eps: float) -> torch.Tensor:
+        """Helper function to compute gumbel noise
+
+        :param logits: Tensor containing unnormalized log probabilities for each class.
+        :type logits: torch.Tensor
+        :param eps: Epsilon
+        :type eps: float
+        :return: Gumbel noise tensor
+        :rtype: torch.Tensor
+        """
+        epsilon = torch.rand_like(logits)
+        epsilon.add_(eps)
+        epsilon.log_()
+        epsilon.neg_()
+        epsilon.add_(eps).log_().neg_()
+        return epsilon
 
 
 class NoisyLinear(nn.Module):
