@@ -165,9 +165,9 @@ class ReplayBuffer:
         :param *args: Variable length argument list. Contains batched transition elements in consistent order,
             e.g. states, actions, rewards, next_states, dones
         """
-        for transition in zip(*args):
-            self._add(*transition)
-            self.counter += 1
+        experiences_to_add = [self.experience(*transition) for transition in zip(*args)]
+        self.memory.extend(experiences_to_add)
+        self.counter += len(experiences_to_add)
 
     def save_to_memory(self, *args: Any, is_vectorised: bool = False) -> None:
         """Applies appropriate save_to_memory function depending on whether
