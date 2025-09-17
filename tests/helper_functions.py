@@ -12,6 +12,7 @@ from agilerl.protocols import EvolvableAlgorithm, EvolvableModule
 
 def unpack_network(model: nn.Sequential) -> List[nn.Module]:
     """Unpacks an nn.Sequential type model"""
+    print("hello world")
     layer_list = []
     for layer in model.children():
         if isinstance(layer, nn.Sequential):
