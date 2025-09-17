@@ -28,7 +28,7 @@ SupportedGymSpaces = Union[
 ]
 GymSpaceType = Union[SupportedGymSpaces, List[SupportedGymSpaces]]
 GymEnvType = Union[str, gym.Env, gym.vector.VectorEnv]
-
+b = 2
 NumpyObsType = Union[np.ndarray, ArrayDict, ArrayTuple]
 TorchObsType = Union[torch.Tensor, TensorDict, TensorTuple]
 ObservationType = Union[NumpyObsType, TorchObsType]
