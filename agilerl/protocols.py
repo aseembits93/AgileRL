@@ -24,7 +24,7 @@ NumpyObsType = Union[ArrayLike, Dict[str, ArrayLike], Tuple[ArrayLike, ...]]
 TorchObsType = Union[torch.Tensor, Dict[str, torch.Tensor], Tuple[torch.Tensor, ...]]
 ObservationType = Union[NumpyObsType, TorchObsType]
 DeviceType = Union[str, torch.device]
-
+a = 1
 
 class MutationType(Enum):
     LAYER = "layer"
